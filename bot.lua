@@ -90,6 +90,8 @@ while true do
 			print('retrying server connection')
 			server = host:connect("54.196.121.96:33111", 2)	
 		end
-	end
-	do end 
+	else 
+        os.execute("sleep 0.025")
+        t = 0
+    end
 end
