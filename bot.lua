@@ -23,6 +23,7 @@ local pings = {}
 local lastPing = 99
 local lastBroadcast = 99
 clientId = 0
+TICK = false
 local broadcasts = {}
 currentState = {}
 myPlayerState = {
@@ -50,6 +51,9 @@ function ANSI_RESET()
 end
 
 local timealive = { h = 0, m = 0, s = 0 }
+start = os.time()
+timeElapsed = 0.0
+totalSeconds = 0
 
 -- Main display fucntion 
 function UpdateScreen()
@@ -58,11 +62,12 @@ function UpdateScreen()
     
     local li
     if isLoggedIn then li = string.format("%c[42m", 0x1b) else li = string.format("%c[41m", 0x1b) end 
-    timealive.s = os.clock() * 60
+    timealive.s = os.time() - start 
+    if timealive.s % 60 == 0 then ms_offset = 0.0 end 
     timealive.m = timealive.s / 60; timealive.s = timealive.s % 60 
     timealive.h = timealive.m / 60; timealive.m = timealive.m % 60 
-    print("Time alive: " .. round(timealive.h,0) .. 'h:' .. round(timealive.m,0) .. 
-        'm:' .. round(timealive.s,0) .. "s || Cycles: " .. cycles .. " || Id : " .. clientId .. ' || ' .. li.. 'O')
+    print("Time alive: " .. math.floor(timealive.h) .. 'h:' .. math.floor(timealive.m) .. 
+        'm:' .. math.floor(timealive.s) .. "s || Cycles: " .. cycles .. " || Id : " .. clientId .. ' || ' .. li.. 'O')
     ANSI_RESET()
     
     -- Bot commands file 
@@ -94,10 +99,17 @@ function ProcessEvent(o)
     end
 end
 
+lastTime = os.time()
+updates = 0
+
 while true do 
-    -- Has it been more than 1/40s?
-	if os.clock() - t > serverTick then 
+	--if os.clock() - t > serverTick then 
+
+        if os.time() ~= lastTime then lastTime = os.time(); TICK = true; end 
+
+        totalSeconds = os.time() - start
 		t = os.clock()
+        UpdateScreen()
         -- Are we online?
 		if server then 
 			local event 
@@ -124,6 +136,7 @@ while true do
                 local updatePacket = packets.update_position
                 updatePacket.data = myPlayerState
                 server:send(json.encode(updatePacket))
+                updates = updates + 1
             end
             -- Always send ping to keep alive 
 			server:send(json.encode(packets.get_ping))
@@ -134,10 +147,10 @@ while true do
             end
 		end
         -- Draw on the terminal
-        UpdateScreen()
-	else 
+        os.execute("sleep 0.5")
+	--else 
         -- If < (1/40), sleep this thread 
-        os.execute("sleep 0.025")
-        t = 0
-    end
+    --    os.execute(string.format("sleep %.3f", serverTick))
+    --    t = os.clock() - serverTick
+    --end
 end
