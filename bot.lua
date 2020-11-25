@@ -12,7 +12,7 @@ local firstUpdate = true
 -- Connect
 local host = enet.host_create(nil, 64, 2, 0, 0)
 -- Ben's AWS 01:
-local server-- = host:connect("54.196.121.96:33111", 2)
+local server= host:connect("54.196.121.96:33111", 2)
 
 local packets = require 'packets'
 local action_types = require 'action_types'
@@ -27,8 +27,8 @@ TICK = false
 local broadcasts = {}
 currentState = {}
 myPlayerState = {
-    pos = { x = 0.0, y = 0.0, z = 0.0 },
-    rot = { x = 0.0, y = 0.0, z = 0.0, m = 0.0 },
+    pos = { x = 0.0, y = 2.0, z = 0.0 },
+    rot = { x = 0.0, y = 0.0, z = 1.0, m = 0.0 },
     lHandPos = { x = 0.0, y = 0.0, z = 0.0 },
     lHandRot = { x = 0.0, y = 0.0, z = 0.0, m = 0.0 },
     lHandObj = '',
@@ -40,6 +40,7 @@ myPlayerState = {
     action = ''
 }
 
+UPDATE_ME = false
 local cycles = 0
 
 function ANSI_CLR()
@@ -54,6 +55,8 @@ local timealive = { h = 0, m = 0, s = 0 }
 start = os.time()
 timeElapsed = 0.0
 totalSeconds = 0
+
+
 
 -- Main display fucntion 
 function UpdateScreen()
@@ -73,6 +76,8 @@ function UpdateScreen()
     -- Bot commands file 
     dofile('bot-command-list.lua')
 end
+
+statesGot = 0
 
 function ProcessEvent(o)
     if o.type == 'login_response' then 
@@ -96,19 +101,31 @@ function ProcessEvent(o)
         table.insert(broadcasts, thisBroadcast)
         lastBroadcast = v
         currentState = o.data 
+        statesGot = statesGot + 1
     end
 end
 
-lastTime = os.time()
+lastTime = os.clock()
 updates = 0
+dT = os.clock()
+totalTime = 0
+pingTime = 0
 
 while true do 
 	--if os.clock() - t > serverTick then 
-
+    dT = os.clock()*100 - lastTime
+    totalTime = totalTime + dT
+    pingTime = pingTime + dT 
+    --print(pingTime)
+    --print(dT, totalTime)
+    if pingTime > 10 then 
+        
+        pingTime = pingTime - 10
+        dT = 0
         if os.time() ~= lastTime then lastTime = os.time(); TICK = true; end 
-
         totalSeconds = os.time() - start
 		t = os.clock()
+        UPDATE_ME = true 
         UpdateScreen()
         -- Are we online?
 		if server then 
@@ -131,26 +148,24 @@ while true do
                 loginPacket.data.password = userCreds[2]
                 server:send(json.encode(loginPacket))
                 print('login sent')
-            elseif isConnected and isLoggedIn then 
+            elseif isConnected and isLoggedIn and UPDATE_ME then 
                 -- Always send update packet for BOTs
                 local updatePacket = packets.update_position
                 updatePacket.data = myPlayerState
+                myPlayerState.pos.x = myPlayerState.pos.x + 1.01
                 server:send(json.encode(updatePacket))
                 updates = updates + 1
             end
             -- Always send ping to keep alive 
-			server:send(json.encode(packets.get_ping))
+		    
+            --print('pingin')
 		else 
-            if not isLoggedIn then 
-			     print('Connecting...')
-			     server = host:connect("54.196.121.96:33111", 2)
-            end
+            --if not isLoggedIn then 
+			--     print('Connecting...')
+			--     server = host:connect("54.196.121.96:33111", 2)
+            --end
 		end
-        -- Draw on the terminal
-        os.execute("sleep 0.5")
-	--else 
-        -- If < (1/40), sleep this thread 
-    --    os.execute(string.format("sleep %.3f", serverTick))
-    --    t = os.clock() - serverTick
-    --end
+        server:send(json.encode(packets.get_ping))
+    end
+    lastTime = os.clock()*100
 end
