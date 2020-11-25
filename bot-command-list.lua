@@ -1,6 +1,9 @@
 print('bot-command-list:')
 
 
+myPlayerState.pos.x = myPlayerState.pos.x + 1
+if myPlayerState.pos.x > 10 then myPlayerState.pos.x = -5 end
+
 if currentState.players ~= nil then 
 	for k,v in pairs(currentState.players) do 
 		--print(k,v)

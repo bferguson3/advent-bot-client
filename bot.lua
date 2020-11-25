@@ -80,10 +80,12 @@ end
 statesGot = 0
 
 function ProcessEvent(o)
+    print(o.type)
     if o.type == 'login_response' then 
         -- Receipt that server likes our user/pass
         isLoggingIn = false
         isLoggedIn = true
+        server:send(json.encode(packets.get_ping))
     elseif o.type == 'ping_response' then
         -- Save average, keep clientId 
         local v = o.ts
@@ -140,7 +142,7 @@ while true do
 				end
 			end
             -- Special case for getting login 
-            if not isLoggedIn and isConnected then
+            if not isLoggedIn then
                 isLoggingIn = true
                 local loginPacket = packets.login_request
                 local userCreds = split(credentials, '/')
@@ -148,11 +150,10 @@ while true do
                 loginPacket.data.password = userCreds[2]
                 server:send(json.encode(loginPacket))
                 print('login sent')
-            elseif isConnected and isLoggedIn and UPDATE_ME then 
+            elseif isLoggedIn and UPDATE_ME then 
                 -- Always send update packet for BOTs
                 local updatePacket = packets.update_position
                 updatePacket.data = myPlayerState
-                myPlayerState.pos.x = myPlayerState.pos.x + 1.01
                 server:send(json.encode(updatePacket))
                 updates = updates + 1
             end
@@ -165,7 +166,10 @@ while true do
 			--     server = host:connect("54.196.121.96:33111", 2)
             --end
 		end
-        server:send(json.encode(packets.get_ping))
+        --server:send(json.encode(packets.get_ping))
+    else 
+        os.execute("sleep 0.15")
+        pingTime = 11
     end
     lastTime = os.clock()*100
 end
