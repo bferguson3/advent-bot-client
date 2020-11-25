@@ -85,6 +85,8 @@ function ProcessEvent(o)
         -- Receipt that server likes our user/pass
         isLoggingIn = false
         isLoggedIn = true
+        --printtable(o.player)
+        --os.quit()
         server:send(json.encode(packets.get_ping))
     elseif o.type == 'ping_response' then
         -- Save average, keep clientId 
@@ -114,34 +116,32 @@ totalTime = 0
 pingTime = 0
 
 while true do 
-	--if os.clock() - t > serverTick then 
+
     dT = os.clock()*100 - lastTime
     totalTime = totalTime + dT
     pingTime = pingTime + dT 
-    --print(pingTime)
-    --print(dT, totalTime)
-    if pingTime > 10 then 
-        
-        pingTime = pingTime - 10
+    
+    if server then 
+        local event 
+        event = host:service()
+        if event then 
+            if event.data ~= 0 and event.data ~= nil then 
+                local d = json.decode(event.data)
+                ProcessEvent(d)
+            end
+            cycles = cycles + 1
+        end
+    end
+    
+    if pingTime > (1/5) then     
+        pingTime = 0
         dT = 0
         if os.time() ~= lastTime then lastTime = os.time(); TICK = true; end 
         totalSeconds = os.time() - start
 		t = os.clock()
         UPDATE_ME = true 
-        UpdateScreen()
         -- Are we online?
 		if server then 
-			local event 
-            -- Get event and process if not nil
-			event = host:service()
-			if event then 
-				if event.data ~= 0 and event.data ~= nil then 
-                    local d = json.decode(event.data)
-                    ProcessEvent(d)
-                    cycles = cycles + 1
-				end
-			end
-            -- Special case for getting login 
             if not isLoggedIn then
                 isLoggingIn = true
                 local loginPacket = packets.login_request
@@ -157,19 +157,13 @@ while true do
                 server:send(json.encode(updatePacket))
                 updates = updates + 1
             end
-            -- Always send ping to keep alive 
-		    
-            --print('pingin')
-		else 
-            --if not isLoggedIn then 
-			--     print('Connecting...')
-			--     server = host:connect("54.196.121.96:33111", 2)
-            --end
+            
 		end
         --server:send(json.encode(packets.get_ping))
     else 
-        os.execute("sleep 0.15")
-        pingTime = 11
+        os.execute("sleep 0.2")
+        pingTime = 1
     end
     lastTime = os.clock()*100
+    UpdateScreen()
 end
