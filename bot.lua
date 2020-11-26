@@ -73,7 +73,7 @@ function UpdateScreen()
     ANSI_RESET()
     
     -- Bot commands file 
-    dofile('bot-command-list.lua')
+    dofile(arg[1])
 end
 
 statesGot = 0
