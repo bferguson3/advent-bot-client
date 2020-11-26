@@ -57,7 +57,6 @@ timeElapsed = 0.0
 totalSeconds = 0
 
 
-
 -- Main display fucntion 
 function UpdateScreen()
 
@@ -85,8 +84,6 @@ function ProcessEvent(o)
         -- Receipt that server likes our user/pass
         isLoggingIn = false
         isLoggedIn = true
-        --printtable(o.player)
-        --os.quit()
         server:send(json.encode(packets.get_ping))
     elseif o.type == 'ping_response' then
         -- Save average, keep clientId 
@@ -114,6 +111,11 @@ updates = 0
 dT = os.clock()
 totalTime = 0
 pingTime = 0
+
+
+--[[]]
+--[[ Main Loop ]]
+--[[]]
 
 while true do 
 
@@ -159,11 +161,13 @@ while true do
             end
             
 		end
+        UpdateScreen()
         --server:send(json.encode(packets.get_ping))
     else 
         os.execute("sleep 0.2")
         pingTime = 1
     end
+    
     lastTime = os.clock()*100
-    UpdateScreen()
+
 end
